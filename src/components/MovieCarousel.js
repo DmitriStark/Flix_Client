@@ -1,50 +1,46 @@
 import React from 'react';
-import {
-  View,
-  FlatList,
-  TouchableOpacity,
-  StyleSheet,
-  Text,
-} from 'react-native';
-import { useDispatch, useSelector } from 'react-redux';
-import { toggleFavorite } from '../redux/slices/favoritesSlice';
+import {View, FlatList, TouchableOpacity, StyleSheet, Text} from 'react-native';
+import {useDispatch, useSelector} from 'react-redux';
+import {toggleFavorite} from '../redux/slices/favoritesSlice';
 import FastImage from 'react-native-fast-image';
 
-const MovieCarousel = ({ movies, onMoviePress }) => {
+const MovieCarousel = ({movies, onMoviePress}) => {
   const dispatch = useDispatch();
-  const favoriteMovies = useSelector((state) => state.favorites.favoriteMovies);
+  const favoriteMovies = useSelector(state => state.favorites.favoriteMovies);
 
-  const isFavorite = (imdbID) => {
+  const isFavorite = imdbID => {
     return favoriteMovies.some(movie => movie.imdbID === imdbID);
   };
 
-  const handleFavoritePress = (movie) => {
+  const handleFavoritePress = movie => {
     dispatch(toggleFavorite(movie));
   };
 
-  const renderMovieItem = ({ item }) => (
+  const renderMovieItem = ({item}) => (
     <TouchableOpacity
       style={styles.movieContainer}
-      onPress={() => onMoviePress(item)}
-    >
+      onPress={() => onMoviePress(item)}>
       <View style={styles.movieCard}>
         <FastImage
           source={{
-            uri: item.Poster !== 'N/A' ? item.Poster : 'https://via.placeholder.com/150x220/333/fff?text=No+Image',
+            uri:
+              item.Poster !== 'N/A'
+                ? item.Poster
+                : 'https://via.placeholder.com/150x220/333/fff?text=No+Image',
             priority: FastImage.priority.normal,
           }}
           style={styles.moviePoster}
           resizeMode={FastImage.resizeMode.cover}
         />
-        
+
         <TouchableOpacity
           style={styles.favoriteButton}
-          onPress={() => handleFavoritePress(item)}
-        >
-          <Text style={[
-            styles.favoriteIcon,
-            isFavorite(item.imdbID) && styles.favoriteIconActive
-          ]}>
+          onPress={() => handleFavoritePress(item)}>
+          <Text
+            style={[
+              styles.favoriteIcon,
+              isFavorite(item.imdbID) && styles.favoriteIconActive,
+            ]}>
             ★
           </Text>
         </TouchableOpacity>
@@ -63,7 +59,7 @@ const MovieCarousel = ({ movies, onMoviePress }) => {
   return (
     <FlatList
       data={movies}
-      keyExtractor={(item) => item.imdbID}
+      keyExtractor={item => item.imdbID}
       renderItem={renderMovieItem}
       horizontal
       showsHorizontalScrollIndicator={false}

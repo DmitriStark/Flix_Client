@@ -12,7 +12,6 @@ const AppNavigator = () => {
     state => state.auth,
   );
 
-  // Show loading screen while checking authentication
   if (isLoading || !isInitialized) {
     return (
       <View style={styles.loadingContainer}>
@@ -24,10 +23,8 @@ const AppNavigator = () => {
   return (
     <Stack.Navigator screenOptions={{headerShown: false}}>
       {isAuthenticated ? (
-        // User is authenticated - show main app
         <Stack.Screen name="Main" component={DrawerNavigator} />
       ) : (
-        // User is not authenticated - show login
         <Stack.Screen name="Login" component={LoginScreen} />
       )}
     </Stack.Navigator>

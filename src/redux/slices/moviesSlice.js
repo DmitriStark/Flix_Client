@@ -1,7 +1,6 @@
 import {createSlice, createAsyncThunk} from '@reduxjs/toolkit';
 import {movieAPI} from '../../services/api';
 
-// Fetch popular movies (first carousel)
 export const fetchPopularMovies = createAsyncThunk(
   'movies/fetchPopularMovies',
   async (_, {rejectWithValue}) => {
@@ -18,7 +17,6 @@ export const fetchPopularMovies = createAsyncThunk(
   },
 );
 
-// Fetch new movies (second carousel)
 export const fetchNewMovies = createAsyncThunk(
   'movies/fetchNewMovies',
   async (_, {rejectWithValue}) => {
@@ -35,7 +33,6 @@ export const fetchNewMovies = createAsyncThunk(
   },
 );
 
-// Search movies with parameters (Search, Type, Year)
 export const searchMovies = createAsyncThunk(
   'movies/searchMovies',
   async ({search, type, year}, {rejectWithValue}) => {
@@ -45,7 +42,7 @@ export const searchMovies = createAsyncThunk(
         return {
           movies: response.movies,
           searchTerm: search,
-          isSuccessful: response.movies.length >= 6, // Successful search = 6+ movies
+          isSuccessful: response.movies.length >= 6,
         };
       } else {
         return rejectWithValue(response.message);
@@ -56,7 +53,6 @@ export const searchMovies = createAsyncThunk(
   },
 );
 
-// Fetch movie details
 export const fetchMovieDetails = createAsyncThunk(
   'movies/fetchMovieDetails',
   async (imdbID, {rejectWithValue}) => {
@@ -109,7 +105,6 @@ const moviesSlice = createSlice({
   },
   extraReducers: builder => {
     builder
-      // Fetch Popular Movies
       .addCase(fetchPopularMovies.pending, state => {
         state.isLoadingPopular = true;
         state.error = null;
@@ -123,7 +118,6 @@ const moviesSlice = createSlice({
         state.isLoadingPopular = false;
         state.error = action.payload;
       })
-      // Fetch New Movies
       .addCase(fetchNewMovies.pending, state => {
         state.isLoadingNew = true;
         state.error = null;
@@ -137,7 +131,6 @@ const moviesSlice = createSlice({
         state.isLoadingNew = false;
         state.error = action.payload;
       })
-      // Search Movies
       .addCase(searchMovies.pending, state => {
         state.isSearching = true;
         state.searchError = null;
@@ -148,7 +141,6 @@ const moviesSlice = createSlice({
         state.searchTerm = action.payload.searchTerm;
         state.searchError = null;
 
-        // Update carousels if search is successful (6+ movies)
         if (action.payload.isSuccessful) {
           state.popularMovies = action.payload.movies.slice(0, 10);
           state.newMovies = action.payload.movies.slice(5, 15);
@@ -159,7 +151,6 @@ const moviesSlice = createSlice({
         state.searchError = action.payload;
         state.searchResults = [];
       })
-      // Fetch Movie Details
       .addCase(fetchMovieDetails.pending, state => {
         state.isLoadingDetails = true;
       })

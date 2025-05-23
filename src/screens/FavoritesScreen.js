@@ -22,7 +22,6 @@ const FavoritesScreen = () => {
   const {favorites} = useSelector(state => state.favorites);
 
   useEffect(() => {
-    // Reset the new favorites counter when user visits this screen
     dispatch(resetNewFavoritesCounter());
   }, [dispatch]);
 
@@ -82,7 +81,6 @@ const FavoritesScreen = () => {
         translucent
       />
 
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={openDrawer} style={styles.menuButton}>
           <View style={styles.menuLine} />
@@ -93,7 +91,6 @@ const FavoritesScreen = () => {
         <View style={styles.placeholder} />
       </View>
 
-      {/* Favorites List */}
       <FlatList
         data={favorites}
         keyExtractor={item => item.imdbID}

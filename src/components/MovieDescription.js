@@ -1,17 +1,12 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-} from 'react-native';
-import { useDispatch, useSelector } from 'react-redux';
-import { toggleFavorite } from '../redux/slices/favoritesSlice';
+import {View, Text, StyleSheet, TouchableOpacity} from 'react-native';
+import {useDispatch, useSelector} from 'react-redux';
+import {toggleFavorite} from '../redux/slices/favoritesSlice';
 import FastImage from 'react-native-fast-image';
 
-const MovieDescription = ({ movie }) => {
+const MovieDescription = ({movie}) => {
   const dispatch = useDispatch();
-  const favoriteMovies = useSelector((state) => state.favorites.favoriteMovies);
+  const favoriteMovies = useSelector(state => state.favorites.favoriteMovies);
 
   const isFavorite = favoriteMovies.some(fav => fav.imdbID === movie.imdbID);
 
@@ -28,13 +23,16 @@ const MovieDescription = ({ movie }) => {
       <View style={styles.movieInfo}>
         <FastImage
           source={{
-            uri: movie.Poster !== 'N/A' ? movie.Poster : 'https://via.placeholder.com/150x220/333/fff?text=No+Image',
+            uri:
+              movie.Poster !== 'N/A'
+                ? movie.Poster
+                : 'https://via.placeholder.com/150x220/333/fff?text=No+Image',
             priority: FastImage.priority.normal,
           }}
           style={styles.moviePoster}
           resizeMode={FastImage.resizeMode.cover}
         />
-        
+
         <View style={styles.movieDetails}>
           <Text style={styles.movieTitle} numberOfLines={2}>
             {movie.Title}
@@ -42,15 +40,15 @@ const MovieDescription = ({ movie }) => {
           <Text style={styles.movieYear}>Year: {movie.Year}</Text>
           <Text style={styles.movieId}>imdbID: {movie.imdbID}</Text>
           <Text style={styles.movieType}>Type: {movie.Type}</Text>
-          
+
           <TouchableOpacity
             style={styles.favoriteButton}
-            onPress={handleFavoritePress}
-          >
-            <Text style={[
-              styles.favoriteIcon,
-              isFavorite && styles.favoriteIconActive
-            ]}>
+            onPress={handleFavoritePress}>
+            <Text
+              style={[
+                styles.favoriteIcon,
+                isFavorite && styles.favoriteIconActive,
+              ]}>
               ★
             </Text>
           </TouchableOpacity>

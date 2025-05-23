@@ -12,52 +12,42 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {combineReducers} from '@reduxjs/toolkit';
 
-// Import your slices
 import authSlice from './slices/authSlice';
 import moviesSlice from './slices/moviesSlice';
 import favoritesSlice from './slices/favoritesSlice';
 
-// Persist config
 const persistConfig = {
   key: 'root',
   storage: AsyncStorage,
-  whitelist: ['auth', 'favorites'], // Only persist auth and favorites
+  whitelist: ['auth', 'favorites'],
 };
 
-// Combine reducers
 const rootReducer = combineReducers({
   auth: authSlice,
   movies: moviesSlice,
   favorites: favoritesSlice,
 });
 
-// Create persisted reducer
 const persistedReducer = persistReducer(persistConfig, rootReducer);
 
-// Configure store with better serialization handling
 export const store = configureStore({
   reducer: persistedReducer,
   middleware: getDefaultMiddleware =>
     getDefaultMiddleware({
       serializableCheck: {
-        // Ignore these action types from redux-persist
         ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
-        // Ignore these field paths in all actions
         ignoredActionsPaths: ['meta.arg', 'payload.timestamp'],
-        // Ignore these field paths in the state
         ignoredPaths: ['items.dates'],
       },
-      // Disable immutability check in development for better performance
       immutableCheck: {
         warnAfter: 128,
       },
     }),
-  devTools: __DEV__, // Enable Redux DevTools in development
+  devTools: __DEV__,
 });
 
 export const persistor = persistStore(store);
 
-// Safe logging function
 const safeLog = state => {
   try {
     const authState = state?.auth || {};
@@ -95,7 +85,6 @@ const safeLog = state => {
   }
 };
 
-// Log store state changes in development
 if (__DEV__) {
   store.subscribe(() => {
     const state = store.getState();

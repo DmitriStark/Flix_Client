@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import {useDispatch, useSelector} from 'react-redux';
-import {useNavigation} from '@react-navigation/native'; // Add this import
+import {useNavigation} from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
 import FastImage from 'react-native-fast-image';
 import Icon from 'react-native-vector-icons/MaterialIcons';
@@ -29,7 +29,7 @@ const {width} = Dimensions.get('window');
 
 const HomeScreen = () => {
   const dispatch = useDispatch();
-  const navigation = useNavigation(); // Add this line
+  const navigation = useNavigation();
   const {
     popularMovies,
     newMovies,
@@ -46,27 +46,23 @@ const HomeScreen = () => {
   const [showSearch, setShowSearch] = useState(false);
 
   useEffect(() => {
-    // Load both carousels on screen mount (two API calls as per requirements)
     dispatch(fetchPopularMovies());
     dispatch(fetchNewMovies());
   }, [dispatch]);
 
-  // Add this function to open the drawer
   const openDrawer = () => {
     navigation.openDrawer();
   };
 
   const handleMoviePress = async movie => {
     try {
-      // Set selected movie for immediate UI update
       dispatch(setSelectedMovie(movie));
 
-      // Fetch detailed movie information if we have imdbID
       if (movie.imdbID) {
         dispatch(fetchMovieDetails(movie.imdbID));
       }
-    } catch (error) {
-      console.error('Failed to load movie details:', error);
+    } catch (err) {
+      console.error('Failed to load movie details:', err);
     }
   };
 
@@ -100,7 +96,6 @@ const HomeScreen = () => {
           resizeMode={FastImage.resizeMode.cover}
         />
 
-        {/* Favorite Star Button - Shows indication when selected */}
         <TouchableOpacity
           style={styles.favoriteButton}
           onPress={() => handleFavoritePress(movie)}>
@@ -161,7 +156,9 @@ const HomeScreen = () => {
   };
 
   const renderMovieDetails = () => {
-    if (!selectedMovie) return null;
+    if (!selectedMovie) {
+      return null;
+    }
 
     return (
       <View style={styles.movieDetailsContainer}>
@@ -212,19 +209,18 @@ const HomeScreen = () => {
     );
   };
 
-  // Determine which movies to show based on search results
-  // Successful search = 6+ movies (as per requirements)
   const displayPopularMovies =
     searchResults.length > 0 ? searchResults : popularMovies;
   const displayNewMovies =
     searchResults.length > 0 ? searchResults.slice(5) : newMovies;
 
+  // eslint-disable-next-line no-unused-vars
+  const movieItemWidth = width < 768 ? 120 : 150;
+
   return (
     <LinearGradient colors={['#141414', '#000000']} style={styles.container}>
       <ScrollView style={styles.scrollView}>
-        {/* Header with Drawer Menu and Search Toggle */}
         <View style={styles.header}>
-          {/* Add hamburger menu button */}
           <TouchableOpacity onPress={openDrawer} style={styles.menuButton}>
             <View style={styles.menuLine} />
             <View style={styles.menuLine} />
@@ -251,30 +247,26 @@ const HomeScreen = () => {
             </Text>
             {searchResults.length >= 6 && (
               <Text style={styles.successfulSearchText}>
-                ✅ Successful search ({searchResults.length} movies found)
+                Successful search ({searchResults.length} movies found)
               </Text>
             )}
           </View>
         )}
 
-        {/* Movie Details (Middle Component as per requirements) */}
         {renderMovieDetails()}
 
-        {/* First Carousel - Popular Movies */}
         {renderCarousel(
           displayPopularMovies,
           searchTerm ? 'Search Results' : 'Popular Movies',
           isLoadingPopular,
         )}
 
-        {/* Second Carousel - New Movies */}
         {renderCarousel(
           displayNewMovies,
           searchTerm ? 'More Results' : 'New Movies',
           isLoadingNew,
         )}
 
-        {/* Error Display */}
         {error && (
           <View style={styles.errorContainer}>
             <Text style={styles.errorText}>{error}</Text>
@@ -308,10 +300,9 @@ const styles = StyleSheet.create({
     paddingTop: 46,
     paddingBottom: 8,
   },
-  // Add styles for the menu button
   menuButton: {
     padding: 5,
-    width: 35, // Give it a consistent width
+    width: 35,
   },
   menuLine: {
     width: 25,
@@ -323,12 +314,12 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: 'bold',
     color: '#e50914',
-    flex: 1, // Take up available space
-    textAlign: 'center', // Center the title
+    flex: 1,
+    textAlign: 'center',
   },
   searchToggle: {
     padding: 8,
-    width: 35, // Give it a consistent width to match the menu button
+    width: 35,
   },
   searchInfo: {
     paddingHorizontal: 16,

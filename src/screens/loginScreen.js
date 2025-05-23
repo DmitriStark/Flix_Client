@@ -19,7 +19,7 @@ import {login, register} from '../redux/slices/authSlice';
 const LoginScreen = () => {
   const dispatch = useDispatch();
 
-  const [isLogin, setIsLogin] = useState(true); // Toggle between login and register
+  const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -32,7 +32,6 @@ const LoginScreen = () => {
   const validateForm = () => {
     const newErrors = {};
 
-    // Username validation (8+ chars, uppercase and lowercase)
     if (!formData.username.trim()) {
       newErrors.username = 'Username is required';
     } else if (formData.username.length < 8) {
@@ -42,7 +41,6 @@ const LoginScreen = () => {
         'Username must contain uppercase and lowercase letters';
     }
 
-    // Email validation (only for registration)
     if (!isLogin) {
       if (!formData.email.trim()) {
         newErrors.email = 'Email is required';
@@ -51,7 +49,6 @@ const LoginScreen = () => {
       }
     }
 
-    // Password validation (6+ chars, uppercase, lowercase, number, special char)
     if (!formData.password) {
       newErrors.password = 'Password is required';
     } else if (formData.password.length < 6) {
@@ -71,13 +68,14 @@ const LoginScreen = () => {
   };
 
   const handleSubmit = async () => {
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      return;
+    }
 
     setIsLoading(true);
 
     try {
       if (isLogin) {
-        // Login
         const loginData = {
           username: formData.username.trim(),
           password: formData.password,
@@ -90,7 +88,6 @@ const LoginScreen = () => {
           Alert.alert('Success', 'Login successful!');
         }
       } else {
-        // Register
         const registerData = {
           username: formData.username.trim(),
           email: formData.email.trim(),
@@ -102,7 +99,6 @@ const LoginScreen = () => {
 
         if (result.success) {
           Alert.alert('Success', 'Registration successful! You can now login.');
-          // Switch to login mode after successful registration
           setIsLogin(true);
           setFormData({username: formData.username, email: '', password: ''});
         }
@@ -122,7 +118,6 @@ const LoginScreen = () => {
   const toggleMode = () => {
     setIsLogin(!isLogin);
     setErrors({});
-    // Keep username but clear other fields when switching modes
     setFormData({
       username: formData.username,
       email: '',
@@ -132,7 +127,6 @@ const LoginScreen = () => {
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({...prev, [field]: value}));
-    // Clear error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({...prev, [field]: ''}));
     }
@@ -146,7 +140,6 @@ const LoginScreen = () => {
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled">
-          {/* Header */}
           <View style={styles.header}>
             <Text style={styles.title}>Menora Flix</Text>
             <Text style={styles.subtitle}>
@@ -154,9 +147,7 @@ const LoginScreen = () => {
             </Text>
           </View>
 
-          {/* Form */}
           <View style={styles.form}>
-            {/* Username Field */}
             <View style={styles.inputContainer}>
               <Icon
                 name="person"
@@ -178,7 +169,6 @@ const LoginScreen = () => {
               <Text style={styles.errorText}>{errors.username}</Text>
             )}
 
-            {/* Email Field (Registration Only) */}
             {!isLogin && (
               <>
                 <View style={styles.inputContainer}>
@@ -205,7 +195,6 @@ const LoginScreen = () => {
               </>
             )}
 
-            {/* Password Field */}
             <View style={styles.inputContainer}>
               <Icon
                 name="lock"
@@ -237,7 +226,6 @@ const LoginScreen = () => {
               <Text style={styles.errorText}>{errors.password}</Text>
             )}
 
-            {/* Submit Button */}
             <TouchableOpacity
               style={[styles.submitButton, isLoading && styles.disabledButton]}
               onPress={handleSubmit}
@@ -251,7 +239,6 @@ const LoginScreen = () => {
               )}
             </TouchableOpacity>
 
-            {/* Toggle Mode */}
             <View style={styles.toggleContainer}>
               <Text style={styles.toggleText}>
                 {isLogin
@@ -266,7 +253,6 @@ const LoginScreen = () => {
             </View>
           </View>
 
-          {/* Requirements Info (Registration Only) */}
           {!isLogin && (
             <View style={styles.requirementsContainer}>
               <Text style={styles.requirementsTitle}>

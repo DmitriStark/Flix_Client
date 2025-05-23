@@ -8,38 +8,34 @@ import AppNavigator from './src/navigation/AppNavigator';
 import {verifyToken} from './src/redux/slices/authSlice';
 import {loadFavoritesFromStorage} from './src/redux/slices/favoritesSlice';
 
+const LoadingScreen = () => (
+  <View style={styles.loadingContainer}>
+    <ActivityIndicator size="large" color="#e50914" />
+  </View>
+);
+
 const App = () => {
   useEffect(() => {
-    // Initialize app after store is ready
     const initializeApp = async () => {
       try {
         console.log('Initializing Menora Flix app...');
 
-        // Load favorites from storage first
         await store.dispatch(loadFavoritesFromStorage());
 
-        // Then check for existing authentication
         await store.dispatch(verifyToken());
 
         console.log('App initialization complete');
-      } catch (error) {
+      } catch (err) {
         console.log(
           'App initialization completed with expected auth check failure',
         );
       }
     };
 
-    // Wait a bit for persistor to rehydrate, then initialize
     const timer = setTimeout(initializeApp, 100);
 
     return () => clearTimeout(timer);
   }, []);
-
-  const LoadingScreen = () => (
-    <View style={styles.loadingContainer}>
-      <ActivityIndicator size="large" color="#e50914" />
-    </View>
-  );
 
   return (
     <Provider store={store}>

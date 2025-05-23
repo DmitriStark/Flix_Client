@@ -16,7 +16,7 @@ const SearchBar = () => {
   const {isSearching, searchError} = useSelector(state => state.movies);
 
   const [searchText, setSearchText] = useState('');
-  const [searchType, setSearchType] = useState(''); // movie, series, episode
+  const [searchType, setSearchType] = useState('');
   const [searchYear, setSearchYear] = useState('');
 
   const handleSearch = () => {
@@ -40,7 +40,6 @@ const SearchBar = () => {
 
   return (
     <View style={styles.container}>
-      {/* Main Search Input */}
       <View style={styles.searchInputContainer}>
         <Icon name="search" size={20} color="#666" style={styles.searchIcon} />
         <TextInput
@@ -59,9 +58,7 @@ const SearchBar = () => {
         )}
       </View>
 
-      {/* Search Filters */}
       <View style={styles.filtersContainer}>
-        {/* Type Filter */}
         <View style={styles.filterGroup}>
           <Text style={styles.filterLabel}>Type:</Text>
           <View style={styles.typeButtons}>
@@ -85,7 +82,6 @@ const SearchBar = () => {
           </View>
         </View>
 
-        {/* Year Filter */}
         <View style={styles.filterGroup}>
           <Text style={styles.filterLabel}>Year:</Text>
           <TextInput
@@ -100,7 +96,6 @@ const SearchBar = () => {
         </View>
       </View>
 
-      {/* Search Button */}
       <TouchableOpacity
         style={[
           styles.searchButton,
@@ -118,7 +113,6 @@ const SearchBar = () => {
         )}
       </TouchableOpacity>
 
-      {/* Search Error */}
       {searchError && (
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>{searchError}</Text>

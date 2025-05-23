@@ -2,8 +2,8 @@ import {createSlice} from '@reduxjs/toolkit';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const initialState = {
-  favorites: [], // Initialize as empty array
-  newFavoritesCount: 0, // Counter for new favorites indicator
+  favorites: [],
+  newFavoritesCount: 0,
 };
 
 const favoritesSlice = createSlice({
@@ -13,18 +13,15 @@ const favoritesSlice = createSlice({
     addToFavorites: (state, action) => {
       const movie = action.payload;
 
-      // Ensure favorites array exists
       if (!Array.isArray(state.favorites)) {
         state.favorites = [];
       }
 
-      // Check if already in favorites
       const exists = state.favorites.find(fav => fav.imdbID === movie.imdbID);
       if (!exists) {
         state.favorites.push(movie);
-        state.newFavoritesCount += 1; // Increment new favorites counter
+        state.newFavoritesCount += 1;
 
-        // Save to AsyncStorage (don't await in Redux)
         AsyncStorage.setItem(
           'favorites',
           JSON.stringify(state.favorites),
@@ -39,7 +36,6 @@ const favoritesSlice = createSlice({
     removeFromFavorites: (state, action) => {
       const imdbID = action.payload;
 
-      // Ensure favorites array exists
       if (!Array.isArray(state.favorites)) {
         state.favorites = [];
         return;
@@ -50,9 +46,7 @@ const favoritesSlice = createSlice({
         movie => movie.imdbID !== imdbID,
       );
 
-      // Only save if something was actually removed
       if (state.favorites.length !== initialLength) {
-        // Save to AsyncStorage
         AsyncStorage.setItem(
           'favorites',
           JSON.stringify(state.favorites),
@@ -62,12 +56,10 @@ const favoritesSlice = createSlice({
     },
 
     loadFavorites: (state, action) => {
-      // Ensure payload is an array
       state.favorites = Array.isArray(action.payload) ? action.payload : [];
       console.log('Loaded favorites:', state.favorites.length, 'items');
     },
 
-    // Reset counter when visiting favorites screen (as per requirements)
     resetNewFavoritesCounter: state => {
       state.newFavoritesCount = 0;
       console.log('Reset new favorites counter');
@@ -84,13 +76,11 @@ const favoritesSlice = createSlice({
   },
 });
 
-// Async action to load favorites from storage
 export const loadFavoritesFromStorage = () => async dispatch => {
   try {
     const favoritesString = await AsyncStorage.getItem('favorites');
     if (favoritesString) {
       const favorites = JSON.parse(favoritesString);
-      // Ensure it's an array before dispatching
       if (Array.isArray(favorites)) {
         dispatch(loadFavorites(favorites));
         console.log(
@@ -110,7 +100,7 @@ export const loadFavoritesFromStorage = () => async dispatch => {
     }
   } catch (error) {
     console.error('Error loading favorites from storage:', error);
-    dispatch(loadFavorites([])); // Fallback to empty array
+    dispatch(loadFavorites([]));
   }
 };
 

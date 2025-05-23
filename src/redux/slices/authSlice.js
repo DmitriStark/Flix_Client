@@ -2,7 +2,6 @@ import {createSlice, createAsyncThunk} from '@reduxjs/toolkit';
 import {authAPI} from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Register user
 export const register = createAsyncThunk(
   'auth/register',
   async (userData, {rejectWithValue}) => {
@@ -13,7 +12,6 @@ export const register = createAsyncThunk(
       return response;
     } catch (error) {
       console.error('AuthSlice: Registration error:', error);
-      // Return serializable error message instead of Error object
       return rejectWithValue({
         message: error.message || 'Registration failed',
         success: false,
@@ -22,7 +20,6 @@ export const register = createAsyncThunk(
   },
 );
 
-// Login user
 export const login = createAsyncThunk(
   'auth/login',
   async (credentials, {rejectWithValue}) => {
@@ -33,7 +30,6 @@ export const login = createAsyncThunk(
       return response;
     } catch (error) {
       console.error('AuthSlice: Login error:', error);
-      // Return serializable error message instead of Error object
       return rejectWithValue({
         message: error.message || 'Login failed',
         success: false,
@@ -42,14 +38,12 @@ export const login = createAsyncThunk(
   },
 );
 
-// Verify token (check if user is still authenticated)
 export const verifyToken = createAsyncThunk(
   'auth/verifyToken',
   async (_, {rejectWithValue}) => {
     try {
       const token = await AsyncStorage.getItem('authToken');
       if (!token) {
-        // Return serializable error instead of throwing Error
         return rejectWithValue({
           message: 'No token found',
           success: false,
@@ -60,11 +54,9 @@ export const verifyToken = createAsyncThunk(
       return response;
     } catch (error) {
       console.error('AuthSlice: Token verification error:', error);
-      // Clear invalid token
       await AsyncStorage.removeItem('authToken');
       await AsyncStorage.removeItem('user');
 
-      // Return serializable error message
       return rejectWithValue({
         message: error.message || 'Token verification failed',
         success: false,
@@ -73,7 +65,6 @@ export const verifyToken = createAsyncThunk(
   },
 );
 
-// Logout user
 export const logout = createAsyncThunk(
   'auth/logout',
   async (_, {rejectWithValue}) => {
@@ -82,11 +73,9 @@ export const logout = createAsyncThunk(
       return response;
     } catch (error) {
       console.error('AuthSlice: Logout error:', error);
-      // Even if API fails, clear local storage
       await AsyncStorage.removeItem('authToken');
       await AsyncStorage.removeItem('user');
 
-      // Return serializable error message
       return rejectWithValue({
         message: error.message || 'Logout failed',
         success: false,
@@ -101,7 +90,7 @@ const initialState = {
   isAuthenticated: false,
   isLoading: false,
   error: null,
-  isInitialized: false, // To track if we've checked for existing auth
+  isInitialized: false,
 };
 
 const authSlice = createSlice({
@@ -114,7 +103,6 @@ const authSlice = createSlice({
     setInitialized: state => {
       state.isInitialized = true;
     },
-    // Manual logout (for drawer logout button)
     clearAuth: state => {
       state.user = null;
       state.token = null;
@@ -124,7 +112,6 @@ const authSlice = createSlice({
   },
   extraReducers: builder => {
     builder
-      // Register cases
       .addCase(register.pending, state => {
         state.isLoading = true;
         state.error = null;
@@ -132,7 +119,6 @@ const authSlice = createSlice({
       .addCase(register.fulfilled, (state, action) => {
         state.isLoading = false;
         state.error = null;
-        // Don't auto-login after registration, let user login manually
         console.log('Registration successful:', action.payload);
       })
       .addCase(register.rejected, (state, action) => {
@@ -140,7 +126,6 @@ const authSlice = createSlice({
         state.error = action.payload?.message || 'Registration failed';
       })
 
-      // Login cases
       .addCase(login.pending, state => {
         state.isLoading = true;
         state.error = null;
@@ -163,7 +148,6 @@ const authSlice = createSlice({
         state.isInitialized = true;
       })
 
-      // Token verification cases
       .addCase(verifyToken.pending, state => {
         state.isLoading = true;
       })
@@ -181,14 +165,12 @@ const authSlice = createSlice({
         state.user = null;
         state.token = null;
         state.isInitialized = true;
-        // Don't set error for "No token found" as it's expected behavior
         if (action.payload?.message !== 'No token found') {
           state.error = action.payload?.message || 'Authentication failed';
         }
         console.log('Token verification failed (expected for new users)');
       })
 
-      // Logout cases
       .addCase(logout.pending, state => {
         state.isLoading = true;
       })
@@ -202,7 +184,6 @@ const authSlice = createSlice({
       })
       .addCase(logout.rejected, (state, action) => {
         state.isLoading = false;
-        // Even if logout fails, clear local state
         state.user = null;
         state.token = null;
         state.isAuthenticated = false;

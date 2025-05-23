@@ -25,10 +25,8 @@ const CustomDrawerContent = props => {
         onPress: async () => {
           try {
             await dispatch(logout()).unwrap();
-            // Navigation will automatically go to LoginScreen due to isAuthenticated = false
           } catch (error) {
             console.error('Logout error:', error);
-            // Force logout even if API call fails
             dispatch(logout());
           }
         },
@@ -40,7 +38,6 @@ const CustomDrawerContent = props => {
     <LinearGradient
       colors={['#141414', '#000000']}
       style={styles.drawerContainer}>
-      {/* Header */}
       <View style={styles.drawerHeader}>
         <Icon name="account-circle" size={60} color="#e50914" />
         <Text style={styles.userName}>{user?.username || 'User'}</Text>
@@ -49,13 +46,11 @@ const CustomDrawerContent = props => {
         </Text>
       </View>
 
-      {/* Content */}
       <View style={styles.drawerContent}>
         <Text style={styles.appTitle}>Menora Flix</Text>
         <Text style={styles.appSubtitle}>Your Netflix Experience</Text>
       </View>
 
-      {/* Logout Button at Bottom */}
       <View style={styles.drawerFooter}>
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <Icon name="logout" size={24} color="#fff" />
@@ -69,6 +64,7 @@ const CustomDrawerContent = props => {
 const DrawerNavigator = () => {
   return (
     <Drawer.Navigator
+      // eslint-disable-next-line react/no-unstable-nested-components
       drawerContent={props => <CustomDrawerContent {...props} />}
       screenOptions={{
         headerShown: false,

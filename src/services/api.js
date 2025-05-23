@@ -1,10 +1,7 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// API Base URL - Use correct IP for your setup
-const API_BASE_URL = 'http://10.0.2.2:5000/api'; // Android emulator
-// For iOS simulator use: 'http://localhost:5000/api'
-// For physical device use your computer's IP: 'http://192.168.1.XXX:5000/api'
+const API_BASE_URL = 'http://10.0.2.2:5000/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -12,10 +9,9 @@ const api = axios.create({
     'Content-Type': 'application/json',
     Accept: 'application/json',
   },
-  timeout: 10000, // 10 second timeout
+  timeout: 10000,
 });
 
-// Request interceptor to add JWT token
 api.interceptors.request.use(
   async config => {
     try {
@@ -24,7 +20,6 @@ api.interceptors.request.use(
         config.headers.Authorization = `Bearer ${token}`;
       }
 
-      // Log request for debugging
       console.log('API Request:', {
         method: config.method,
         url: config.url,
@@ -42,7 +37,6 @@ api.interceptors.request.use(
   },
 );
 
-// Response interceptor for error handling
 api.interceptors.response.use(
   response => {
     console.log('API Response:', response.data);
@@ -63,13 +57,11 @@ api.interceptors.response.use(
   },
 );
 
-// Auth API
 export const authAPI = {
   register: async userData => {
     try {
       console.log('Registering user:', userData);
 
-      // Ensure data is properly formatted
       const requestData = {
         username: userData.username?.toString().trim(),
         email: userData.email?.toString().trim(),
@@ -101,7 +93,6 @@ export const authAPI = {
     try {
       console.log('Logging in user:', credentials);
 
-      // Ensure data is properly formatted
       const requestData = {
         username: credentials.username?.toString().trim(),
         password: credentials.password?.toString(),
@@ -157,9 +148,7 @@ export const authAPI = {
   },
 };
 
-// Movies API with OMDB integration
 export const movieAPI = {
-  // Get popular movies (first carousel)
   getPopularMovies: async () => {
     try {
       const response = await api.get('/movies/popular');
@@ -175,7 +164,6 @@ export const movieAPI = {
     }
   },
 
-  // Get new movies (second carousel)
   getNewMovies: async () => {
     try {
       const response = await api.get('/movies/new');
@@ -191,13 +179,18 @@ export const movieAPI = {
     }
   },
 
-  // Search movies with parameters (Search, Type, Year)
   searchMovies: async ({search, type, year}) => {
     try {
       const params = new URLSearchParams();
-      if (search) params.append('search', search);
-      if (type) params.append('type', type);
-      if (year) params.append('year', year);
+      if (search) {
+        params.append('search', search);
+      }
+      if (type) {
+        params.append('type', type);
+      }
+      if (year) {
+        params.append('year', year);
+      }
 
       const response = await api.get(`/movies/search?${params.toString()}`);
       return response.data;
@@ -212,7 +205,6 @@ export const movieAPI = {
     }
   },
 
-  // Get movie details
   getMovieDetails: async imdbID => {
     try {
       const response = await api.get(`/movies/details/${imdbID}`);
