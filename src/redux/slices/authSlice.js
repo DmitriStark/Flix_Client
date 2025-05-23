@@ -6,12 +6,17 @@ export const register = createAsyncThunk(
   'auth/register',
   async (userData, {rejectWithValue}) => {
     try {
-      console.log('AuthSlice: Attempting registration with:', userData);
       const response = await authAPI.register(userData);
-      console.log('AuthSlice: Registration response:', response);
-      return response;
+
+      if (response && (response.success || response.token)) {
+        return response;
+      } else {
+        return rejectWithValue({
+          message: 'Registration failed - invalid response',
+          success: false,
+        });
+      }
     } catch (error) {
-      console.error('AuthSlice: Registration error:', error);
       return rejectWithValue({
         message: error.message || 'Registration failed',
         success: false,
@@ -24,12 +29,15 @@ export const login = createAsyncThunk(
   'auth/login',
   async (credentials, {rejectWithValue}) => {
     try {
-      console.log('AuthSlice: Attempting login with:', credentials);
       const response = await authAPI.login(credentials);
-      console.log('AuthSlice: Login response:', response);
+
+      if (response?.token && response?.user) {
+        await AsyncStorage.setItem('authToken', response.token);
+        await AsyncStorage.setItem('user', JSON.stringify(response.user));
+      }
+
       return response;
     } catch (error) {
-      console.error('AuthSlice: Login error:', error);
       return rejectWithValue({
         message: error.message || 'Login failed',
         success: false,
@@ -49,14 +57,11 @@ export const verifyToken = createAsyncThunk(
           success: false,
         });
       }
-
       const response = await authAPI.verifyToken(token);
       return response;
     } catch (error) {
-      console.error('AuthSlice: Token verification error:', error);
       await AsyncStorage.removeItem('authToken');
       await AsyncStorage.removeItem('user');
-
       return rejectWithValue({
         message: error.message || 'Token verification failed',
         success: false,
@@ -70,12 +75,12 @@ export const logout = createAsyncThunk(
   async (_, {rejectWithValue}) => {
     try {
       const response = await authAPI.logout();
-      return response;
-    } catch (error) {
-      console.error('AuthSlice: Logout error:', error);
       await AsyncStorage.removeItem('authToken');
       await AsyncStorage.removeItem('user');
-
+      return response;
+    } catch (error) {
+      await AsyncStorage.removeItem('authToken');
+      await AsyncStorage.removeItem('user');
       return rejectWithValue({
         message: error.message || 'Logout failed',
         success: false,
@@ -91,6 +96,7 @@ const initialState = {
   isLoading: false,
   error: null,
   isInitialized: false,
+  hasRegistered: false,
 };
 
 const authSlice = createSlice({
@@ -109,6 +115,9 @@ const authSlice = createSlice({
       state.isAuthenticated = false;
       state.error = null;
     },
+    setHasRegistered: state => {
+      state.hasRegistered = true;
+    },
   },
   extraReducers: builder => {
     builder
@@ -119,13 +128,15 @@ const authSlice = createSlice({
       .addCase(register.fulfilled, (state, action) => {
         state.isLoading = false;
         state.error = null;
-        console.log('Registration successful:', action.payload);
+        state.hasRegistered = true;
+        state.user = null;
+        state.token = null;
+        state.isAuthenticated = false;
       })
       .addCase(register.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload?.message || 'Registration failed';
       })
-
       .addCase(login.pending, state => {
         state.isLoading = true;
         state.error = null;
@@ -137,7 +148,6 @@ const authSlice = createSlice({
         state.isAuthenticated = true;
         state.error = null;
         state.isInitialized = true;
-        console.log('Login successful:', action.payload);
       })
       .addCase(login.rejected, (state, action) => {
         state.isLoading = false;
@@ -147,7 +157,6 @@ const authSlice = createSlice({
         state.token = null;
         state.isInitialized = true;
       })
-
       .addCase(verifyToken.pending, state => {
         state.isLoading = true;
       })
@@ -157,7 +166,6 @@ const authSlice = createSlice({
         state.isAuthenticated = true;
         state.error = null;
         state.isInitialized = true;
-        console.log('Token verification successful');
       })
       .addCase(verifyToken.rejected, (state, action) => {
         state.isLoading = false;
@@ -168,9 +176,7 @@ const authSlice = createSlice({
         if (action.payload?.message !== 'No token found') {
           state.error = action.payload?.message || 'Authentication failed';
         }
-        console.log('Token verification failed (expected for new users)');
       })
-
       .addCase(logout.pending, state => {
         state.isLoading = true;
       })
@@ -180,7 +186,6 @@ const authSlice = createSlice({
         state.token = null;
         state.isAuthenticated = false;
         state.error = null;
-        console.log('Logout successful');
       })
       .addCase(logout.rejected, (state, action) => {
         state.isLoading = false;
@@ -192,5 +197,6 @@ const authSlice = createSlice({
   },
 });
 
-export const {clearError, setInitialized, clearAuth} = authSlice.actions;
+export const {clearError, setInitialized, clearAuth, setHasRegistered} =
+  authSlice.actions;
 export default authSlice.reducer;

@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect, useCallback} from 'react';
 import {
   View,
   Text,
@@ -10,53 +10,69 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  ImageBackground,
 } from 'react-native';
-import {useDispatch} from 'react-redux';
-import LinearGradient from 'react-native-linear-gradient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {useDispatch, useSelector} from 'react-redux';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import {login, register} from '../redux/slices/authSlice';
 
 const LoginScreen = () => {
   const dispatch = useDispatch();
-
-  const [isLogin, setIsLogin] = useState(true);
-  const [formData, setFormData] = useState({
-    username: '',
-    email: '',
-    password: '',
-  });
+  const {hasRegistered} = useSelector(state => state.auth);
+  const [mode, setMode] = useState(hasRegistered ? 'login' : 'signup');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [errors, setErrors] = useState({});
+  const [serverError, setServerError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [hasCheckedStorage, setHasCheckedStorage] = useState(false);
 
-  const validateForm = () => {
+  useEffect(() => {
+    if (hasRegistered) {
+      setMode('login');
+    }
+  }, [hasRegistered]);
+
+  useEffect(() => {
+    if (hasCheckedStorage) {return;}
+
+    const checkRegistrationStatus = async () => {
+      try {
+        const value = await AsyncStorage.getItem('hasRegistered');
+        if (value === 'true') {
+          setMode('login');
+        }
+      } catch (error) {
+        // Handle error silently
+      } finally {
+        setHasCheckedStorage(true);
+      }
+    };
+
+    checkRegistrationStatus();
+  }, [hasCheckedStorage]);
+
+  const validateForm = useCallback(() => {
     const newErrors = {};
 
-    if (!formData.username.trim()) {
+    if (!username.trim()) {
       newErrors.username = 'Username is required';
-    } else if (formData.username.length < 8) {
+    } else if (username.length < 8) {
       newErrors.username = 'Username must be at least 8 characters';
-    } else if (!/(?=.*[A-Z])(?=.*[a-z])/.test(formData.username)) {
+    } else if (!/(?=.*[A-Z])(?=.*[a-z])/.test(username)) {
       newErrors.username =
         'Username must contain uppercase and lowercase letters';
     }
 
-    if (!isLogin) {
-      if (!formData.email.trim()) {
-        newErrors.email = 'Email is required';
-      } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-        newErrors.email = 'Please enter a valid email';
-      }
-    }
-
-    if (!formData.password) {
+    if (!password) {
       newErrors.password = 'Password is required';
-    } else if (formData.password.length < 6) {
+    } else if (password.length < 6) {
       newErrors.password = 'Password must be at least 6 characters';
     } else if (
-      !isLogin &&
-      !/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/.test(
-        formData.password,
+      !/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@!$%*?&])[A-Za-z\d@!$%*?&]/.test(
+        password,
       )
     ) {
       newErrors.password =
@@ -65,75 +81,87 @@ const LoginScreen = () => {
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  };
+  }, [username, password]);
 
-  const handleSubmit = async () => {
+  const switchToLoginMode = useCallback(async () => {
+    try {
+      await AsyncStorage.setItem('hasRegistered', 'true');
+      setPassword('');
+      setErrors({});
+    } catch (error) {
+      setMode('login');
+      setPassword('');
+      setErrors({});
+    }
+  }, []);
+
+  const handleSubmit = useCallback(async () => {
     if (!validateForm()) {
       return;
     }
 
     setIsLoading(true);
+    setServerError('');
 
     try {
-      if (isLogin) {
-        const loginData = {
-          username: formData.username.trim(),
-          password: formData.password,
-        };
+      if (mode === 'signup') {
+        const result = await dispatch(
+          register({
+            username: username.trim(),
+            password: password,
+          }),
+        ).unwrap();
 
-        console.log('Attempting login with:', loginData);
-        const result = await dispatch(login(loginData)).unwrap();
-
-        if (result.success) {
-          Alert.alert('Success', 'Login successful!');
+        if (result?.success || result?.token) {
+          await switchToLoginMode();
+          Alert.alert('Success', 'Registration successful! You can now login.');
+        } else {
+          setServerError('Registration failed. Please try again.');
         }
       } else {
-        const registerData = {
-          username: formData.username.trim(),
-          email: formData.email.trim(),
-          password: formData.password,
-        };
+        const result = await dispatch(
+          login({
+            username: username.trim(),
+            password: password,
+          }),
+        ).unwrap();
 
-        console.log('Attempting registration with:', registerData);
-        const result = await dispatch(register(registerData)).unwrap();
-
-        if (result.success) {
-          Alert.alert('Success', 'Registration successful! You can now login.');
-          setIsLogin(true);
-          setFormData({username: formData.username, email: '', password: ''});
+        if (result?.success || result?.token) {
+          Alert.alert('Success', 'Login successful!');
+        } else {
+          setServerError('Login failed. Please check your credentials.');
         }
       }
     } catch (error) {
-      console.error('Authentication error:', error);
-      Alert.alert(
-        'Error',
+      setServerError(
         error.message ||
-          `${isLogin ? 'Login' : 'Registration'} failed. Please try again.`,
+          `${
+            mode === 'login' ? 'Login' : 'Registration'
+          } failed. Please try again.`,
       );
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [mode, validateForm, dispatch, username, password, switchToLoginMode]);
 
-  const toggleMode = () => {
-    setIsLogin(!isLogin);
+  const toggleMode = useCallback(() => {
+    const newMode = mode === 'login' ? 'signup' : 'login';
+    setMode(newMode);
+    setPassword('');
     setErrors({});
-    setFormData({
-      username: formData.username,
-      email: '',
-      password: '',
-    });
-  };
+    setServerError('');
+  }, [mode]);
 
-  const handleInputChange = (field, value) => {
-    setFormData(prev => ({...prev, [field]: value}));
-    if (errors[field]) {
-      setErrors(prev => ({...prev, [field]: ''}));
-    }
-  };
+  const isSignupMode = mode === 'signup';
+  const showToggle = mode === 'signup';
 
   return (
-    <LinearGradient colors={['#141414', '#000000']} style={styles.container}>
+    <ImageBackground
+      source={require('../../assets/bgImg.png')}
+      style={styles.container}
+      resizeMode="cover">
+      <View style={styles.overlay} />
+
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardAvoid}>
@@ -143,7 +171,7 @@ const LoginScreen = () => {
           <View style={styles.header}>
             <Text style={styles.title}>Menora Flix</Text>
             <Text style={styles.subtitle}>
-              {isLogin ? 'Welcome Back' : 'Create Account'}
+              {isSignupMode ? 'Create Account' : 'Login'}
             </Text>
           </View>
 
@@ -159,40 +187,14 @@ const LoginScreen = () => {
                 style={styles.input}
                 placeholder="Username"
                 placeholderTextColor="#666"
-                value={formData.username}
-                onChangeText={value => handleInputChange('username', value)}
+                value={username}
+                onChangeText={setUsername}
                 autoCapitalize="none"
                 autoCorrect={false}
               />
             </View>
             {errors.username && (
               <Text style={styles.errorText}>{errors.username}</Text>
-            )}
-
-            {!isLogin && (
-              <>
-                <View style={styles.inputContainer}>
-                  <Icon
-                    name="email"
-                    size={20}
-                    color="#666"
-                    style={styles.inputIcon}
-                  />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Email"
-                    placeholderTextColor="#666"
-                    value={formData.email}
-                    onChangeText={value => handleInputChange('email', value)}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                  />
-                </View>
-                {errors.email && (
-                  <Text style={styles.errorText}>{errors.email}</Text>
-                )}
-              </>
             )}
 
             <View style={styles.inputContainer}>
@@ -206,8 +208,8 @@ const LoginScreen = () => {
                 style={styles.input}
                 placeholder="Password"
                 placeholderTextColor="#666"
-                value={formData.password}
-                onChangeText={value => handleInputChange('password', value)}
+                value={password}
+                onChangeText={setPassword}
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -234,64 +236,41 @@ const LoginScreen = () => {
                 <ActivityIndicator color="#fff" size="small" />
               ) : (
                 <Text style={styles.submitButtonText}>
-                  {isLogin ? 'Login' : 'Sign Up'}
+                  {isSignupMode ? 'Sign Up' : 'Login'}
                 </Text>
               )}
             </TouchableOpacity>
 
-            <View style={styles.toggleContainer}>
-              <Text style={styles.toggleText}>
-                {isLogin
-                  ? "Don't have an account?"
-                  : 'Already have an account?'}
-              </Text>
-              <TouchableOpacity onPress={toggleMode}>
-                <Text style={styles.toggleLink}>
-                  {isLogin ? 'Sign Up' : 'Login'}
-                </Text>
-              </TouchableOpacity>
-            </View>
+            {serverError && (
+              <Text style={styles.serverErrorText}>{serverError}</Text>
+            )}
+
+            {showToggle && (
+              <View style={styles.toggleContainer}>
+                <Text style={styles.toggleText}>Already have an account?</Text>
+                <TouchableOpacity onPress={toggleMode}>
+                  <Text style={styles.toggleLink}>Login</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
-
-          {!isLogin && (
-            <View style={styles.requirementsContainer}>
-              <Text style={styles.requirementsTitle}>
-                Password Requirements:
-              </Text>
-              <Text style={styles.requirementText}>
-                • At least 6 characters
-              </Text>
-              <Text style={styles.requirementText}>
-                • Contains uppercase letter
-              </Text>
-              <Text style={styles.requirementText}>
-                • Contains lowercase letter
-              </Text>
-              <Text style={styles.requirementText}>• Contains number</Text>
-              <Text style={styles.requirementText}>
-                • Contains special character (@$!%*?&)
-              </Text>
-
-              <Text style={styles.requirementsTitle}>
-                Username Requirements:
-              </Text>
-              <Text style={styles.requirementText}>
-                • At least 8 characters
-              </Text>
-              <Text style={styles.requirementText}>
-                • Contains uppercase and lowercase letters
-              </Text>
-            </View>
-          )}
         </ScrollView>
       </KeyboardAvoidingView>
-    </LinearGradient>
+    </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  overlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
   },
   keyboardAvoid: {
     flex: 1,
@@ -364,6 +343,12 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
   },
+  serverErrorText: {
+    color: '#fff',
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 10,
+  },
   toggleContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -379,27 +364,6 @@ const styles = StyleSheet.create({
     color: '#e50914',
     fontSize: 14,
     fontWeight: '600',
-  },
-  requirementsContainer: {
-    marginTop: 20,
-    padding: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 8,
-    borderLeftWidth: 3,
-    borderLeftColor: '#e50914',
-  },
-  requirementsTitle: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 8,
-    marginTop: 8,
-  },
-  requirementText: {
-    color: '#ccc',
-    fontSize: 12,
-    marginBottom: 4,
-    marginLeft: 8,
   },
 });
 
